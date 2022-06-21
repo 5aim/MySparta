@@ -1,0 +1,103 @@
+2022년 6월 16일 목요일
+
+
+
+[[[[ DRF 특강 2일차 과제 ]]]]
+
+
+
+
+1. Django 프로젝트를 생성 user 앱 settings.py 등록
+
+
+
+
+2. `Custom user model`을 생성
+
+- 주어진 커스텀 모델 활용
+
+- UserManager(BaseUserManager)
+	create_user
+	create_superuser
+
+- User(AbstractBaseUser)
+	모델필드 작성
+
+
+
+
+3. `UserProfile`모델 생성
+
+- User 1 : 1 UserProfile
+	user : OneToOneField
+
+
+
+
+4. blog앱 settings.py에 등록
+
+
+
+
+
+5. blog앱 `Category`모델 <카테고리 이름, 설명>
+
+
+
+
+
+
+6. blog앱 `Article`모델 <글 작성자, 글 제목, 카테고리, 글 내용> (카테고리는 2개 이상 선택)
+
+- user : ForeignKey
+- category : ManyToManyField
+
+
+
+
+7. Article 모델 작성자와 카테고리의 관계 (외래 키)
+
+- user : ForeignKey
+
+
+
+
+8. admin.py 만들었던 모델들 추가. 사용자와 게시글 자유롭게 생성, 수정
+
+
+
+
+
+9. CBV : 로그인 / 로그아웃
+
+user app - models.py
+
+class UserApiView(APIView)
+	def post
+	
+	def delete
+
+
+
+
+10. CBV : 로그인 한 사용자의 게시글의 제목을 리턴  *****
+
+blog app - views.py
+
+class ArticleView(APIView)
+	is authenticated
+
+	def get
+
+	articles = ArticleModel.objects.filter(user=user)
+        titles = [article.title for article in articles] # list 제목 축약 문법
+
+        titles = []
+
+        for article in articles:
+            titles.append(article.title)
+
+        return Response({"article_list": titles})
+
+
+

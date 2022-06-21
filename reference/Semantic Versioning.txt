@@ -1,0 +1,11 @@
+Semantic Versioning
+
+
+[ X.Y.Z ]
+- X는 주요한 버전
+- Y는 작은 버전
+- Z는 패치버전
+
+1씩 차례로 증가해야 함.
+
+https://spoqa.github.io/2012/12/18/semantic-versioning.html

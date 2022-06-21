@@ -1,0 +1,218 @@
+2022. 06. 16. 목요일
+
+# TIL
+
+---
+
+1. DRF : django rest framework
+
+# settings.py
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [ # 기본적인 view 접근 권한 지정
+        'rest_framework.permissions.AllowAny'
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [ # session 혹은 token을 인증 할 클래스 설정
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication'
+    ],
+    'DEFAULT_PARSER_CLASSES': [ # request.data 속성에 액세스 할 때 사용되는 파서 지정
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser'
+    ]
+}
+
+---
+
+2. mutable 자료형과 immutable 자료형의 차이점
+
+---
+
+3. args / kwargs
+ - 별 하나를 붙이면 리스트가 풀려서 들어가고
+ - 별 두개를 붙이면 딕셔너리가 풀려서 들어간다.
+
+---
+
+4. stacktrace
+ - try / excaption을 활용한 에러처리
+ - def a()"
+		print(f"a 함수가 실행됐습니다")
+		b()
+		return
+
+def b()"
+		print(f"b 함수가 실행됐습니다")
+		c()
+		return
+
+def c()"
+		print(f"c 함수가 실행됐습니다")
+		d()
+		return
+
+def d()"
+		print(f"d 함수가 실행됐습니다")
+		e()
+		return
+
+def e()"
+		print(f"e 함수가 실행됐습니다")
+		raise Exception("에러발생")
+		g()
+		return
+
+a()
+
+# a 함수가 실행됐습니다
+# b 함수가 실행됐습니다
+# c 함수가 실행됐습니다
+# d 함수가 실행됐습니다
+# e 함수가 실행됐습니다
+# e 에러 발생
+
+---
+
+5. venv 가상환경진입
+ - python -m venv venv
+ - venv\Script\activate
+
+---
+
+6. requirement 활용
+ - pip install django
+ - pip install djangorestframework
+ - pip freeze
+ - [요약정리] pip freeze > requirements.txt
+
+ - [설치] pip install -r requirements.txt
+
+ - [추가] pip install pandas
+ - [요약정리] pip freeze > requirements.txt
+
+---
+
+7. 코드컨벤션
+ - class 이름 : Pascal
+ - 변수, 함수이름 : Snake
+ - 상수(한번 선언하고 바뀌지 않는 값 : 모두 대문자로
+ - list : 복수형으로 표기. number_list도 가능. 반복문 가독성 높임
+ - 함수 네이밍시 어떤 역할을 하는지 표현할 것.
+
+---
+
+8. http status code
+ - 2xx : normal
+ - 3xx : redirect (http → https)
+ - 4xx : client error
+ - 5xx : server error
+
+---
+
+9. RDBMS(Relational DataBase Management system)
+ - MySql, OracleDB 등 관계형 데이터베이스
+
+---
+
+10. SQL(Structured Query Language)
+ - 데이터베이스의 CRUD를 위해 사용되는 언어
+ - CRUD : Create(생성), Read(읽기), Update(갱신), Delete(삭제)
+ - NoSQL(Not Only Sql) : 관계형 데이터베이스가 아닌 다른 형태로 데이터를 저장. mongoDB 등이 여기에 해당
+
+---
+
+11. Table : DB는 기본적으로 테이블로 구성됨
+ - User : Table
+ - username, password : Field
+ - record & object : 데이터베이스에 저장되는 값들을 지칭
+
+---
+
+12. Key
+ - Foreign Key : 다른 테이블을 참조 할 때 사용
+ - Unique Key : 중복 값을 허용하지 않음
+ - Primary Key : 테이블에서 반드시 존재해야 함
+
+---
+
+13. django 프로젝트 구조
+ - models.py
+	- DB에 테이블을 추가, 관리 할 때 사용
+	- 테이블 필드, 필드의 속성값 설정
+	- makemigrations / migrate 명령어로 DB에 반영.
+ - setting.py
+	- django 프로젝트를 실행 할 때 해당 파일을 참조
+	- 데이터베이스 설정, 앱 설정, 기본 정책 설정 등
+ - views.py
+	- request 데이터를 받은 후 처리 할 전반적인 logic
+ - urls.py
+	- views에 있는 함수나 class를 호출
+	- 웹에서 경로를 설정
+
+---
+
+14. models.py 예제
+# models.py
+from django.db import models
+
+class User(models.Model):
+    username = models.CharField("사용자 계정", max_length=20, unique=True)
+    email = models.EmailField("이메일 주소", max_length=100, unique=True)
+    password = models.CharField("비밀번호", max_length=20)
+    fullname = models.CharField("이름", max_length=20)
+    join_date = models.DateTimeField("가입일", auto_now_add=True)
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(to=User, verbose_name="사용자", on_delete=models.CASCADE)
+    hobby = models.ManyToManyField(to="Hobby", verbose_name="취미")
+    introduction = models.TextField("소개")
+    birthday = models.DateField("생일")
+    age = models.IntegerField("나이")
+
+class Hobby(models.Model):
+    name = models.CharField("취미", max_length=50)
+
+---
+
+15. on_delete 속성들
+	- `CASCADE` : FK로 참조하는 레코드가 삭제 될 경우 해당 레코드를 삭제
+	- `SET_NULL` : FK 필드의 값을 Null로 변경해준다. null=True가 정의되어 있어야 사용 가능
+	- `PROTECT` : 해당 레코드가 삭제되지 않도록 보호
+	- `SET_DEFAULT` : FK 필드의 값을 default로 변경해준다. default=””가 정의되어 있어야 사용 가능
+	- `SET()` : FK 필드의 값을 SET에 설정된 함수를 통해 원하는 값으로 변경
+	- `DO_NOTHING` : 아무런 동작을 하지 않는다. 참조 관계의 무결성이 손상될 수 있기 때문에 권장하지 않는다.
+
+---
+
+16. DateField와 DateTimeField에서 사용하는 default 값
+	- `default` = $date : 지정한 값을 기본 값으로 설정한다.
+	- `auto_now_add` = True : 레코드가 생성될 때의 date를 기준으로 값을 지정 ex)create
+	- `auto_now` = True : 레코드가 save()될 때마다 갱신 ex) update
+
+17. VScode 단축키
+- Command + N : 새파일
+- Command + S : 저장
+- Command + O : 열기
+- Command + / : 주석
+
+- Command + (+Shift) F : 찾기 (전체찾기)
+- Command + , : 설정창
+- Command + +, - : 확대, 축소
+
+- Command + B : 사이드바 표시
+- Command + P : 명령어 팔레트
+
+- Command + D : 같은 폼 한번에 수정
+- Option + click : 부분 수정
+- Option + 방향키 : 이동
+- Option + Shift + 방향키 : 위아래로 복붙
+
+- Option + Shift + i : 한번에 수정
+
+- Option + Shift + Drag : 줄에 맞춰서 보여줌s
+
+[ html ]
+- Command + Shift + V : 웹 미러링
+
+[ 터미널 ]
+- control + shift + ` : 새터미널

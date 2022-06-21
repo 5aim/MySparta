@@ -1,0 +1,259 @@
+2022. 06. 17. 금요일
+
+# TIL
+
+---
+
+1. 타임어택
+
+
+[[[[ settings.py ]]]]
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+AUTH_USER_MODEL = 'user.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny'
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication'
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser'
+    ]
+}
+
+
+
+
+
+[[[[ user - models.py ]]]]
+
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.hashers import make_password
+from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, AbstractUser
+from django.utils.translation import gettext_lazy as _
+
+class UserType(models.Model):
+    user_type = models.CharField(max_length=50) # candidate, recruiter
+
+    class Meta:
+        db_table = 'user_types'
+
+    def __str__(self):
+        return self.user_type
+
+
+# custom user model 사용 시 UserManager 클래스와 create_user, create_superuser 함수가 정의되어 있어야 함
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None):
+        if not email:
+            raise ValueError('Users must have an username')
+        user = self.model(
+            # username=username,
+            email=email,
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    # python manage.py createsuperuser 사용 시 해당 함수가 사용됨
+    def create_superuser(self, email, password=None):
+        user = self.create_user(
+            # username=username,
+            email=email,
+            password=password
+        )
+        user.is_admin = True
+        user.save(using=self._db)
+        return user
+
+
+class User(AbstractBaseUser):
+    # username = models.CharField("사용자 계정", max_length=20, unique=True)
+    # email = models.EmailField("이메일 주소", max_length=100)
+    # password = models.CharField("비밀번호", max_length=128)
+    # fullname = models.CharField("이름", max_length=20)
+    # join_date = models.DateTimeField("가입일", auto_now_add=True)
+    user_type = models.ForeignKey('UserType', on_delete=models.SET_NULL, null=True) # user_type + _id
+    username = models.CharField(max_length=20)
+    email = models.EmailField(max_length=100, unique=True)
+    password = models.CharField(max_length=128)
+    fullname = models.CharField(max_length=20)
+    join_date = models.DateTimeField(auto_now_add=True)
+
+    # is_active가 False일 경우 계정이 비활성화됨
+    is_active = models.BooleanField(default=True)
+
+    # is_staff에서 해당 값 사용
+    is_admin = models.BooleanField(default=False)
+
+    # id로 사용 할 필드 지정.
+    # 로그인 시 USERNAME_FIELD에 설정 된 필드와 password가 사용된다.
+    USERNAME_FIELD = 'email'
+
+    # user를 생성할 때 입력받은 필드 지정
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()  # custom user 생성 시 필요
+
+    def __str__(self):
+        # return self.username
+        return self.email
+
+    # 로그인 사용자의 특정 테이블의 crud 권한을 설정, perm table의 crud 권한이 들어간다.
+    # admin일 경우 항상 True, 비활성 사용자(is_active=False)의 경우 항상 False
+    def has_perm(self, perm, obj=None):
+        return True
+
+    # 로그인 사용자의 특정 app에 접근 가능 여부를 설정, app_label에는 app 이름이 들어간다.
+    # admin일 경우 항상 True, 비활성 사용자(is_active=False)의 경우 항상 False
+    def has_module_perms(self, app_label):
+        return True
+
+    # admin 권한 설정
+    @property
+    def is_staff(self):
+        return self.is_admin
+
+
+class UserLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    last_login_date = models.DateField()
+    last_job_apply_date = models.DateField(null=True)
+
+    class Meta:
+        db_table = 'user_logs'
+
+
+
+
+
+
+[[[[ user - views.py ]]]]
+
+import json
+import datetime
+from django.contrib.auth.hashers import make_password
+from django.shortcuts import render
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import permissions, status
+
+
+from django.contrib.auth import login, authenticate, logout
+
+from .models import User, UserLog, UserType
+
+class SignUpView(APIView):
+
+    permission_classes = [permissions.AllowAny]
+    # 회원 가입
+    def post(self, request):
+        # data = json.loads(request.body)
+        user_type = request.data.get('user_type', None)
+        email = request.data.get('email', None)
+        password = request.data.get('password', None)
+        # User.objects.create(email=email, password=password)
+        usertype = UserType.objects.get(user_type = user_type)
+
+        # passcode = make_password(password)
+        # print("usertype=", end=""), print(usertype)
+        # User(email=email, password=make_password(password)).save()
+        User(user_type=usertype, email=email, password=make_password(password)).save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class SignInView(APIView):
+    # 로그인
+    def post(self, request):
+        username = request.data.get('email', '')
+        password = request.data.get('password', '')
+
+        user = authenticate(request, email=username, password=password)
+        if not user:
+            return Response({"error": "존재하지 않는 계정이거나 패스워드가 일치하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        login(request, user)
+        now = datetime.datetime.now()
+        UserLog.objects.create(user=user, last_login_date=now.strftime('%Y-%m-%d')) # 유저 로그 생성
+        return Response({"message": "로그인 성공!!"}, status=status.HTTP_200_OK)
+
+
+    def delete(self, request):
+        logout(request)
+        return Response({"message": "logout success!!"}, status=status.HTTP_200_OK)
+
+
+
+
+
+[[[[ post - models.py ]]]]
+
+from django.db import models
+
+
+class SkillSet(models.Model):
+    name = models.CharField(max_length=128)
+
+    class Meta:
+        db_table = 'skill_sets'
+
+
+class JobPostSkillSet(models.Model):
+    skill_set = models.ForeignKey('SkillSet', on_delete=models.SET_NULL, null=True)
+    job_post = models.ForeignKey('JobPost', on_delete=models.SET_NULL, null=True)
+
+
+class JobType(models.Model):
+    job_type = models.CharField(max_length=128)
+
+    class Meta:
+        db_table = 'job_types'
+
+
+class JobPost(models.Model):
+    job_type_id = models.ForeignKey(JobType, on_delete=models.SET_NULL, null=True)
+    company_id = models.ForeignKey('Company', on_delete=models.SET_NULL, null=True)
+    job_description = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'job_posts'
+
+
+class Company(models.Model):
+    company_name = models.CharField(max_length=128)
+    business_area = models.ManyToManyField('BusinessArea', through='CompanyBusinessArea')
+
+    class Meta:
+        db_table = 'companies'
+
+
+class CompanyBusinessArea(models.Model):
+    company = models.ForeignKey('Company', on_delete=models.SET_NULL, null=True)
+    business_area = models.ForeignKey('BusinessArea', on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        db_table = 'company_business_areas'
+
+
+class BusinessArea(models.Model):
+    area = models.CharField(max_length=128)
+
+    class Meta:
+        db_table = 'business_areas'
+
+
+
+
+

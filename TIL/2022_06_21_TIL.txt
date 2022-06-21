@@ -1,0 +1,113 @@
+2022년 6월 21일 TIL
+
+
+DRF 특강 2일차 복습
+
+개념정리하면서 이게 무엇인지 혼자 설명할 수 있어야 함.
+밀린과제도 빨리 마무리하는데
+중요한건 배운건 잘 정리해서 넘어가야 함.
+
+
+1. 
+
+- rest API http method
+	get
+	post
+	put
+	delete
+
+- request처리 CBV
+	allowany
+	isadminuser
+	isauthenticated
+
+	get
+	post
+	put
+	delte
+
+- Postman packing, unpacking
+	**request.data
+	
+	csrf error
+	- Test
+	  var xsrfCookie = postman.getResponseCookie("csrftoken");
+	  postman.setGlobalVariable('csrftoken', xsrfCookie.value);
+	- Headers key/value 추가
+
+- queryset, object 차이점
+
+- orm
+	.save()
+	.create()
+	.all()
+	.filter()
+	.get
+	.update()
+	.delete()
+
+- 자주 사용하는 패턴
+	.DoesNotExist
+	.order_by
+	.all().first()
+	.get_or_create()
+
+
+
+2. custom user
+
+- from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+
+- UserManager(BaseUserManager)
+	create_user(self, username, password=None)
+	create_superuser(self, username, password=None)
+
+- User(AbstractBaseUser)
+	is_active
+	is_admin
+	USERNAME_FIELD = 'username'
+	REQUIRED_FIELDS = []
+	objects = UserManager()
+	
+	# 권한
+	def has_perm(self, perm, obj=None):
+        	return True
+
+	def has_module_perms(self, app_label): 
+ 	       return True
+
+	# admin 권한 설정
+  	@property
+  	def is_staff(self): 
+  	    return self.is_admi
+
+- AUTH_USER_MODEL = 'user.User'
+
+- error : AUTH_USER_MODEL refers to model 'user.User' that has not been installed
+
+	migrations 기록 지우고 다시 migrate
+
+	settings.py ‘user’, 유저 앱 등록
+
+- postman error : "detail": "CSRF Failed: CSRF token missing."
+
+	Test
+	var xsrfCookie = postman.getResponseCookie("csrftoken");
+	postman.setGlobalVariable('csrftoken', xsrfCookie.value);
+
+	Headers
+	Key : X-CSRFToken
+	Value : {{csrftoken}}
+
+	error : "detail": "CSRF Failed: CSRF token from the 'X-Csrftoken' HTTP header has incorrect length."
+
+		Value : cookie 에서 복붙
+
+
+
+
+
+
+
+
+
