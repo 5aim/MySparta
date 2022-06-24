@@ -1,0 +1,203 @@
+2022년 6월 22일 수요일
+
+
+
+1. 외래키
+
+- ForeignKey
+	many-to-one 형태
+	ForeignKey에 unique=True 속성을 주면 one-to-one 형태와 같음
+	부모테이블에 primary, 자식테이블에 foreign
+
+- OneToOneField
+	one-to-one 형태
+	OneToOneField(to=User, verbose_name="사용자",
+	on_delete=models.CASCADE, primary_key=True)
+
+- ManyToManyField
+	many-to-many 형태
+	DB구조상으로 converter가 필요함.
+	ManyToManyField(Hobby, verbose_name="취미")
+
+
+
+2. eval
+
+def get(self, request):
+    user = request.user
+
+		hobbys = user.userprofile.hobby
+		
+		for command in dir(hobbys):
+				try:
+						print(f"command : {command} / ", eval(f"hobbys.(command)()"))
+						print(f"command : {command} / ", eval(f"hobbys.(command)"))
+				except:
+						pass
+		
+		return Response({})
+
+
+
+
+3. 로그인, 로그아웃 기능
+
+from django.contrib.auth import login, authenticate
+
+class UserApiView(APIView):
+    def post(self, request):
+        username = request.data.get('username', '')
+        password = request.data.get('password', '')
+
+        user = authenticate(request, username=username, password=password)
+        if not user:
+            return Response({"error": "존재하지 않는 계정이거나 패스워드가 일치하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        login(request, user)
+        return Response({"message": "로그인 성공!!"}, status=status.HTTP_200_OK)
+
+	def delete(self, request):
+        logout(request)
+        return Response({"message": "logout success"})
+
+
+
+
+
+4. dir()
+
+- 특정 object를 dir(object) 형태로 사용 시 역참조 확인 가능한 항목들을 불러올 수 있음
+
+# --------------- models.py
+
+class User(AbstractBaseUser):
+    ...
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(to=User)
+    hobby = models.ManyToManyField("Hobby", verbose_name="취미")
+    ...
+
+class Hobby(models.Model):
+    ...
+
+# --------------- views.py
+
+user = User.objects.get(id=obj_id)
+hobby = Hobby.objects.get(id=obj_id)
+
+print(dir(user))
+print(dir(hobby))
+
+
+
+5. 역참조
+
+# 역참조
+hobby.userprofile_set
+
+# 정참조
+user_profile.hobby
+
+- related_name : models.py에서 releated_name을 user_hobby 로 지정했다면 hobby.user_hobby와 같이 사용
+
+- related_name을 설정하지 않으면 기본적으로 tablename_set 형태로 지정
+
+- 1 object : M object
+
+	hobby = HobbyModel.objects.all().order_by("?").first()
+
+	hobby_users = hobby.userprofile_set.all()
+
+	hobby_users = hobby.userprofile_set.filter(field=value)
+
+- 1 object : 1 ojbect
+
+	user = UserModel.objects.all().order_by("?").first()
+
+	user_profile = user.userprofile
+
+	print(user_profile.hobby)
+	print(user_profile.introduction)
+	print(user_profile.birthday)
+	print(user_profile.age)
+
+- 역참조를 활용해 나와 같은 취미를 가진 사람을 찾는 코드
+
+# UserProfile은 user와 One-to-one관계이기 때문에 _set이 붙지 않음
+# UserProfile은 hobby와 Many-to-many관계이기 때문에 _set이 붙음
+# ForeignKey를 사용했을 떄 또한 _set이 붙게 됨
+
+	# exclde : 매칭 된 쿼리(조회한 사람)만 제외, filter와 반대
+	# annotate : 필드 이름 변경, 원하는 필드 추가 등. ex) count(), sum()
+	# F() : 객체에 해당되는 string을 쿼리로 생성함
+	# values / values_list : 지정한 필드만 리턴 할 수 있음.
+	# values는 dict로 return, values_list는 tuple로 ruturn
+	# flat=True : 값을 리스트로 받음
+
+def get(self, request):
+		user = request.user
+		hobbys = user.userprofile.hobby.all()
+
+		for hobby in hobbys:
+
+			hobby_members = hobby.userprofile_set.exclude(user=user).annotate(username=F('user__username')).values_list('username',flat=True)
+			hobby_members = list(hobby_members)
+
+			print(f"hobby : {hobby.name} / hobby members : {hobby_members}")
+
+		result print
+
+
+위에 코드를 serialize 로 대체가 가능함.
+exclude, annotate, F, values_list, flat
+
+
+6. serializer
+
+- serializer Meta class
+
+- model에 사용 될 테이블, field에 사용될 필드
+
+- UserSerializer
+
+from rest_framework import serializers
+from user.models import User as UserModel
+
+class UserSerializer(serializers.ModelSerializer):
+   class Meta:
+
+        # serializer에 사용될 model, field지정
+        model = UserModel
+
+        # 모든 필드를 사용하고 싶을 경우 fields = "__all__"로 사용
+        fields = ["username", "password", "fullname", "email"]
+
+- UserProfileSerializer
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfileModel
+        fields = ["introduction", "age"]
+
+- views.py
+
+from rest_framework import status
+from user.serializers import UserSerializer
+
+def get(self, request):
+	user = request.user
+	# serializer에 queryset을 인자로 줄 경우 many=True 옵션을 사용해야 한다.
+
+	serialized_user_data = UserSerializer(user).data
+	# context= 를 통해 원하는 데이터를 serializer에 넘겨주고
+	# self.context를 사용해 호출 가능하다.
+	# serialized_user_data = UserSerializer(user, context={"some_key": "some_value"}).data
+    
+	return Response(serialized_user_data, status=status.HTTP_200_OK)
+
+
+
+
+7. 내일은 DRF 특강 4일차를 천천히 보면서 다시 복습하고
+3일차 과제를 작성해야겠다.
