@@ -1,0 +1,54 @@
+2022년 6월 27일 월요일
+
+
+1. 인증의 종류
+
+- session authentication
+
+	User information is in a session
+
+	JSESSIONID
+
+- JWT : Json Web Token
+
+	Header : JWT를 검증하는데 필요한 정보를 가진 데이터
+
+	Payload : 실질적으로 인증에 필요한 데이터를 저장
+
+	* claim : 데이터 각각의 필드.
+
+	Verify signature : 토큰에 대한 진위여부를 판단하는 용도
+
+	
+2. DRF에서 JWT 사용
+
+- simplejwt
+
+	포스트맨에서 테스트
+
+	JWT 정보 확인 [ https://jwt.io/ ]
+
+	JWT 옵션 설정
+
+3. 커스텀 JWT claim
+
+	포스트맨에서 테스트
+
+	JWT 정보 확인 [ https://jwt.io/ ]
+
+4. Access Token
+
+class OnlyAuthenticatedUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+		
+	# JWT 인증방식 클래스 지정하기
+	authentication_classes = [JWTAuthentication]
+
+포스트맨에서 테스트
+
+- 잘못된 Access Token 사용
+
+- Refresh Token
+
+5. 프론트 엔드 환경 구성
+
