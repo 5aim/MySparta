@@ -1,0 +1,77 @@
+2022년 6월 30일 목요일
+
+
+
+1. AWS S3
+
+- 강의에 따르면 모든 퍼블릭 엑세스 차단을 비활성화하면
+	객체 읽기가 가능한데 그럼에도 되지 않던 이유는
+	AWS에서 객체 소유권에 대한 기능이 추가되었기 때문에
+	[객체 소유권] ACL을 활성화 시켜서
+	객체 라이터로 변경해야 함.
+
+2. IAM(Identity and Access Management)
+
+- 사용자, 역할을 관리하는 서비스
+
+- 프로그래밍 방식 엑세스 : 개발 언어와 연계해서 사용하는 방식
+
+3. AWS SDK(Software Development Kit)
+
+- 프로그래밍을 돕는 라이브러리
+
+- Mac 기준 설치
+
+https://awscli.amazonaws.com/AWSCLIV2.pkg
+
+- aws --version
+
+- aws configure
+
+AWS Access Key ID [None]: 
+AWS Secret Access Key [None]: 
+Default region name [None]:  ap-northeast-2
+Default output format [None]: json
+
+- 파일 업로드하기
+
+aws s3 cp {파일명} s3://hjawsbucket --acl public-read
+
+4. S3 파이썬 연동 with flask
+
+- boto3 : AWS와 연동시켜주는 파이썬 라이브러리
+
+- app.py
+
+import boto3
+from flask import Flask, render_template, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/')
+def main():
+    return render_template('index.html')
+
+@app.route('/fileupload', methods=['POST'])
+def file_upload():
+    file = request.files['file']
+    s3 = boto3.client('s3')
+    s3.put_object(
+        ACL="public-read",
+        Bucket="{버킷이름}",
+        Body=file,
+        Key=file.filename,
+        ContentType=file.content_type)
+    return jsonify({'result': 'success'})
+
+if __name__ == '__main__':
+    app.run()
+
+5. S3 비용계산
+
+- https://calculator.aws/#/createCalculator/S3
+
+
+
+
+

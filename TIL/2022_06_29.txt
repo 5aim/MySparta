@@ -1,0 +1,70 @@
+2022년 6월 29일 수요일
+
+
+Django를 활용한 쉽고 빠른 웹개발
+
+파이썬 웹프로그래밍 개념정리
+
+1.
+
+DEBUG = True : 개발모드, False : 운영모드
+
+2. settings.py
+
+- TEMPLATES DIRS : 프로젝트 템플릿 파일이 위치할 디렉터리를 지정
+
+- STATICFILES_DIRS : 정적파일이 위치할 디렉터리
+
+- MEDIA_ROOT : 파일 업로드 기능
+
+- 작업순서
+
+	models.py
+
+	admin.py
+
+	migrations
+
+	URLconf
+
+3. error : InsecurePlatformWarning
+
+- 아래 명령어 입력
+
+- pip3 install pyopenssl ndg-httpsclient pyasn1
+
+- 보안 프로토콜인 HTTPS 처리에 사용되는 OpenSSL 패키지에 관련 패키지를 추가로 설치해야 한다는 경고 메세지임.
+
+4. 애플리케이션 등록
+
+- 애플리케이션의 설정 클래스로 등록하는 것이 더 정확한 방법임.
+
+INSTALLED_APPS = [
+	'bookmark.apps.BookmarkConfig',
+]
+
+- django.apps.AppConfig 클래스를 상속받아 작성함.
+
+- 앱 작성 클래스에는 앱 이름(필수), 레이블, 별칭, 경로 등을 설정할 수 있음.
+
+5. __str()__ 함수는 객체를 문자열로 표현할 때 사용하는 함수
+
+6. Admin 사이트 테이블 반영
+
+- 지금까지 해왔던 방식 : register()함수 사용
+
+admin.site.register(Bookmark, BookmarkAdmin)
+
+- 새로 알게 된 방식 : @admin.register() 데코레이터
+
+@admin.register(Bookmark)
+class BookmarkAdmin(admin.ModelAdmin):
+	list_display = ('id', 'title', 'url')
+
+BookmarkAdmin 클래스는 Bookmark 클래스가 Admin 사이트에서 어떤 모습으로 보여줄지 정의하는 클래스임.
+Bookmark 내용을 보여줄 때, id와 title, url을 화면에 출력.
+@admin.register() 데코레이터를 사용해 어드민 사이트에 등록.
+
+7. python3 manage.py showmigrations
+
+- 모든 마이그레이션을 보여주고 각 마이그레이션별 적용여부를 알 수 있음.
